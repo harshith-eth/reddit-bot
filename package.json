@@ -1,0 +1,16 @@
+{
+    "name": "zavata-bot",
+    "version": "1.0.0",
+    "description": "A Reddit bot for promoting Zavata.ai",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js"
+    },
+    "dependencies": {
+        "@azure/communication-email": "^1.0.0",
+        "@azure/openai": "^1.0.0-beta.2",
+        "dotenv": "^10.0.0",
+        "node-cron": "^3.0.0",
+        "snoowrap": "^1.22.0"
+    }
+}
