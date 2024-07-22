@@ -6,7 +6,6 @@
     "type": "module",
     "scripts": {
         "start": "node src/index.js"
-        
     },
     "dependencies": {
         "@azure/communication-email": "^1.0.0",
