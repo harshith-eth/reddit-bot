@@ -1,4 +1,5 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 const config = {
   clientId: process.env.CLIENT_ID,
@@ -11,4 +12,4 @@ const config = {
   azureOpenAIDeployment: process.env.AZURE_OPENAI_DEPLOYMENT
 };
 
-module.exports = config;
+export default config;

@@ -1,10 +1,10 @@
-const Snoowrap = require('snoowrap'); // Snoowrap is a library for accessing the Reddit API
-const { OpenAIClient, AzureKeyCredential } = require("@azure/openai"); // Importing Azure OpenAI client for accessing the OpenAI API
-const cron = require('node-cron'); // Node-cron is a library for scheduling tasks in Node.js
-const { EmailClient } = require("@azure/communication-email"); // Azure Communication Email SDK
-const config = require('./config'); // Importing configuration settings from config.js
-const prompts = require('./prompts'); // Importing predefined prompts from prompts.js
-const fetch = require('node-fetch'); // Node-fetch is a library for making HTTP requests
+import Snoowrap from 'snoowrap'; // Snoowrap is a library for accessing the Reddit API
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai'; // Importing Azure OpenAI client for accessing the OpenAI API
+import cron from 'node-cron'; // Node-cron is a library for scheduling tasks in Node.js
+import { EmailClient } from '@azure/communication-email'; // Azure Communication Email SDK
+import config from './config.js'; // Importing configuration settings from config.js
+import prompts from './prompts.js'; // Importing predefined prompts from prompts.js
+import fetch from 'node-fetch'; // Node-fetch is a library for making HTTP requests
 
 const r = new Snoowrap({
   userAgent: config.userAgent,
@@ -239,7 +239,7 @@ cron.schedule('*/10 * * * *', () => {
   monitorRSSFeeds().catch(error => console.error('Error in scheduled RSS feed monitoring:', error));
 });
 
-module.exports = {
+export {
   checkComments,
   postComment,
   postDailyContent,

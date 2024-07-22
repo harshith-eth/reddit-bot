@@ -1,4 +1,4 @@
-const { checkComments, postDailyContent } = require('./bot');
+import { checkComments, postDailyContent } from './bot.js';
 
 console.log('ZavataBot is starting...');
 
