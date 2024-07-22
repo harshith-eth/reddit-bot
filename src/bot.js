@@ -1,12 +1,11 @@
-// Import required modules
 const Snoowrap = require('snoowrap'); // Snoowrap is a library for accessing the Reddit API
 const { OpenAIClient, AzureKeyCredential } = require("@azure/openai"); // Importing Azure OpenAI client for accessing the OpenAI API
 const cron = require('node-cron'); // Node-cron is a library for scheduling tasks in Node.js
 const { EmailClient } = require("@azure/communication-email"); // Azure Communication Email SDK
 const config = require('./config'); // Importing configuration settings from config.js
 const prompts = require('./prompts'); // Importing predefined prompts from prompts.js
+const fetch = require('node-fetch'); // Node-fetch is a library for making HTTP requests
 
-// Initialize the Reddit API client with credentials from config.js
 const r = new Snoowrap({
   userAgent: config.userAgent,
   clientId: config.clientId,
@@ -15,17 +14,14 @@ const r = new Snoowrap({
   password: config.password,
 });
 
-// Initialize the OpenAI client with Azure credentials from config.js
 const openAIClient = new OpenAIClient(
   config.azureOpenAIEndpoint,
   new AzureKeyCredential(config.azureOpenAIApiKey)
 );
 
-// Initialize Azure Communication Email client
 const connectionString = "endpoint=https://cold-email.unitedstates.communication.azure.com/;accesskey=84kDQsyzaA0rG8gKcUZ3mgG3PIShtn0pK6v7Il7Q3yoWXrMb53c1JQQJ99AGACULyCpqMMGeAAAAAZCSDnQW";
 const emailClient = new EmailClient(connectionString);
 
-// Function to send a well-structured email notification
 async function sendEmailNotification(subject, text) {
   const emailMessage = {
     senderAddress: "sarah@zavata.ai",
@@ -47,12 +43,11 @@ async function sendEmailNotification(subject, text) {
   }
 }
 
-// Function to check new comments on Reddit
 async function checkComments() {
   try {
     const comments = await r.getNewComments('all', { limit: 25 });
     for (const comment of comments) {
-      if (comment.body.toLowerCase().includes('ai interviewer')) {
+      if (comment.body.toLowerCase().includes('ai interviewer') && comment.author.name !== config.username) {
         await postComment(comment);
       }
     }
@@ -61,7 +56,6 @@ async function checkComments() {
   }
 }
 
-// Function to post a reply to a comment
 async function postComment(comment) {
   try {
     const content = await generateContent(prompts.commentReply.replace('"{comment.body}"', comment.body));
@@ -72,7 +66,6 @@ async function postComment(comment) {
   }
 }
 
-// Function to generate content using OpenAI
 async function generateContent(prompt) {
   try {
     const response = await openAIClient.getChatCompletions(
@@ -90,30 +83,28 @@ async function generateContent(prompt) {
   }
 }
 
-// Function to post daily content on Reddit
 async function postDailyContent() {
   try {
-    const subreddits = ['test', 'microsaas', 'saas', 'micro_saas', 'salesforce', 'jobsearchhacks', 'careerguidance', 'humanresources',
-      'startups', 'entrepreneur', 'WorkOnline', 'ProductManagement', 'remotework','TalentAcquisition','DataScienceJobs','cscareerquestions','IndieHackers','SideProject','ProductHunters','Leadership','DeepLearning','DevOpsJobs','ITJobs','SysAdminJobs','SmallBusiness','B2B','RecruitmentMarketing','EmployerBranding','microsaas','zavataai','AIRecruitment','SaaSInnovations','JobSeekerAI','startup_ideas','venturecapital','TechStartups','Fintech','HealthTech','EdTech','LegalTech','LegalTechAI','Consulting','ITCareerQuestions','TechNews'];
-    
-    const title = 'AI Interviewers and the Future of Recruiting with Zavata.ai';
-    const content = await generateContent(prompts.dailyPost);
+    const subreddits = ['test'];
 
     let successfulPosts = [];
     let failedPosts = [];
 
     for (const subreddit of subreddits) {
+      const { title, content } = await generateUniqueContentForSubreddit(subreddit);
       try {
         await r.getSubreddit(subreddit).submitSelfpost({ title, text: content });
         console.log(`Daily post submitted successfully in subreddit: ${subreddit}`);
         successfulPosts.push(subreddit);
+        await sendEmailNotification(`Post Successful in ${subreddit}`, `Successfully posted to ${subreddit}`);
+        await randomDelay(); // Random delay between posts
       } catch (error) {
         console.error(`Error submitting daily post to subreddit ${subreddit}:`, error);
         failedPosts.push({ subreddit, error: error.message });
+        await sendEmailNotification(`Post Failed in ${subreddit}`, `Failed to post to ${subreddit}: ${error.message}`);
       }
     }
 
-    // Email report with all successful and failed posts
     const successText = successfulPosts.length > 0 ? `Successfully posted to: ${successfulPosts.join(', ')}` : 'No successful posts today.';
     const failedText = failedPosts.length > 0 ? `Failed posts:\n${failedPosts.map(f => `Subreddit: ${f.subreddit}, Error: ${f.error}`).join('\n')}` : 'No failed posts today.';
 
@@ -137,7 +128,31 @@ Sarah Blake (AI Virtual Assistant)`;
   }
 }
 
-// Function to follow up on specific comments
+async function generateUniqueContentForSubreddit(subreddit) {
+  const title = await generateUniqueTitle(subreddit);
+  const content = await generateContent(prompts.dailyPost.replace('Zavata.ai', `Zavata.ai in ${subreddit}`));
+  return { title, content };
+}
+
+async function generateUniqueTitle(subreddit) {
+  const response = await openAIClient.getChatCompletions(
+    config.azureOpenAIDeployment,
+    [
+      { role: "system", content: "You are an AI expert in recruiting and HR technology, promoting Zavata.ai." },
+      { role: "user", content: `Generate a unique title for a Reddit post about AI Interviewers and the Future of Recruiting with Zavata.ai in ${subreddit}.` }
+    ],
+    { maxTokens: 50 }
+  );
+  return response.choices[0].message.content;
+}
+
+function randomDelay() {
+  const min = 600000; // 10 minutes
+  const max = 3600000; // 60 minutes
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
 async function followUpOnComments() {
   try {
     const comment = await r.getComment('r/SaaS/comment_id_here'); // Replace with the actual comment ID
@@ -151,12 +166,61 @@ async function followUpOnComments() {
   }
 }
 
-// Schedule comment checking every 5 minutes
+// Monitor RSS feeds
+async function monitorRSSFeeds() {
+  try {
+    const feeds = [
+      'https://old.reddit.com/user/BotherAware7848/upvoted.rss',
+      'https://old.reddit.com/user/BotherAware7848/downvoted.rss',
+      'https://old.reddit.com/user/BotherAware7848/saved.rss',
+      'https://old.reddit.com/user/BotherAware7848/hidden.rss',
+      'https://old.reddit.com/message/inbox/.rss',
+      'https://old.reddit.com/message/unread/.rss',
+      'https://old.reddit.com/message/messages/.rss',
+      'https://old.reddit.com/message/comments/.rss',
+      'https://old.reddit.com/message/selfreply.rss',
+      'https://old.reddit.com/message/mentions.rss'
+    ];
+
+    for (const feed of feeds) {
+      const response = await fetch(feed);
+      const text = await response.text();
+      const comments = parseRSSFeed(text);
+      for (const comment of comments) {
+        if (comment.includes('AI interviewer') || comment.includes('hiring')) {
+          await postCommentToRSS(comment);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error monitoring RSS feeds:', error);
+  }
+}
+
+function parseRSSFeed(text) {
+  const regex = /<title>(.*?)<\/title>/g;
+  const titles = [];
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    titles.push(match[1]);
+  }
+  return titles;
+}
+
+async function postCommentToRSS(comment) {
+  try {
+    const content = await generateContent(prompts.commentReply.replace('"{comment}"', comment));
+    await r.getComment(comment).reply(content);
+    console.log('Replied to RSS feed comment:', comment);
+  } catch (error) {
+    console.error('Error posting comment to RSS feed:', error);
+  }
+}
+
 cron.schedule('*/5 * * * *', () => {
   checkComments().catch(error => console.error('Error in scheduled comment check:', error));
 });
 
-// Schedule daily post at 9:30 AM PST
 cron.schedule('30 9 * * *', () => {
   postDailyContent().catch(error => console.error('Error in scheduled daily post:', error));
 }, {
@@ -164,7 +228,6 @@ cron.schedule('30 9 * * *', () => {
   timezone: "America/Los_Angeles"
 });
 
-// Schedule follow-up on specific comments
 cron.schedule('0 10 * * *', () => {
   followUpOnComments().catch(error => console.error('Error in scheduled follow-up:', error));
 }, {
@@ -172,9 +235,14 @@ cron.schedule('0 10 * * *', () => {
   timezone: "America/Los_Angeles"
 });
 
+cron.schedule('*/10 * * * *', () => {
+  monitorRSSFeeds().catch(error => console.error('Error in scheduled RSS feed monitoring:', error));
+});
+
 module.exports = {
   checkComments,
   postComment,
   postDailyContent,
-  followUpOnComments
+  followUpOnComments,
+  monitorRSSFeeds
 };
