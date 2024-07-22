@@ -3,16 +3,18 @@
     "version": "1.0.0",
     "description": "A Reddit bot for promoting Zavata.ai",
     "main": "src/index.js",
+    "type": "module",
     "scripts": {
         "start": "node src/index.js"
+        
     },
     "dependencies": {
         "@azure/communication-email": "^1.0.0",
         "@azure/openai": "^1.0.0-beta.2",
         "dotenv": "^10.0.0",
         "node-cron": "^3.0.0",
-        "node-fetch": "^3.3.2",
         "rss-parser": "^3.13.0",
-        "snoowrap": "^1.22.0"
+        "snoowrap": "^1.22.0",
+        "node-fetch": "^2.6.1"
     }
 }
