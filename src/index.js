@@ -12,3 +12,8 @@ checkComments().catch(error => console.error('Error in initial comment check:', 
 postDailyContent().catch(error => console.error('Error in initial daily post:', error));
 
 console.log('ZavataBot is running...');
+
+// Export a basic handler function for Vercel
+export default (req, res) => {
+  res.status(200).send('ZavataBot is running');
+};
