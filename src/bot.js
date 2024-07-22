@@ -1,10 +1,10 @@
-import Snoowrap from 'snoowrap'; // Snoowrap is a library for accessing the Reddit API
-import { OpenAIClient, AzureKeyCredential } from '@azure/openai'; // Importing Azure OpenAI client for accessing the OpenAI API
-import cron from 'node-cron'; // Node-cron is a library for scheduling tasks in Node.js
-import { EmailClient } from '@azure/communication-email'; // Azure Communication Email SDK
-import config from './config.js'; // Importing configuration settings from config.js
-import prompts from './prompts.js'; // Importing predefined prompts from prompts.js
-import fetch from 'node-fetch'; // Node-fetch is a library for making HTTP requests
+import Snoowrap from 'snoowrap';
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+import cron from 'node-cron';
+import { EmailClient } from '@azure/communication-email';
+import config from './config.js';
+import prompts from './prompts.js';
+import fetch from 'node-fetch';
 
 const r = new Snoowrap({
   userAgent: config.userAgent,
@@ -85,7 +85,10 @@ async function generateContent(prompt) {
 
 async function postDailyContent() {
   try {
-    const subreddits = ['test'];
+    const subreddits = ['test', 'microsaas', 'saas', 'micro_saas', 'salesforce', 'jobsearchhacks', 'careerguidance', 'humanresources', 'startups', 'entrepreneur',
+       'WorkOnline', 'ProductManagement', 'remotework', 'TalentAcquisition', 'DataScienceJobs', 'cscareerquestions', 'IndieHackers', 'SideProject', 'ProductHunters',
+        'Leadership', 'DeepLearning', 'DevOpsJobs', 'ITJobs', 'SysAdminJobs', 'SmallBusiness', 'B2B', 'RecruitmentMarketing', 'EmployerBranding', 'microsaas', 'zavataai', 'AIRecruitment', 
+        'SaaSInnovations', 'JobSeekerAI', 'startup_ideas', 'venturecapital', 'TechStartups', 'Fintech', 'HealthTech', 'EdTech', 'LegalTech', 'LegalTechAI', 'Consulting', 'ITCareerQuestions', 'TechNews']; // Add your subreddits here
 
     let successfulPosts = [];
     let failedPosts = [];
